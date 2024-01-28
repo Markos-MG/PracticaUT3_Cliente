@@ -76,7 +76,7 @@ public class Player extends Thread {
 
             // Recibe la respuesta del servidor
             respuesta = reader.readLine();
-            System.out.println(getName() + " --- " + respuesta);
+            mostrarParticipantes(respuesta);
         } catch (IOException e) {
             //e.printStackTrace();
             System.out.println("Error al conectar con el servidor --"+getName());
@@ -232,4 +232,21 @@ public class Player extends Thread {
         }
     }
 
+    public void mostrarParticipantes(String infoString){
+        String[] info = infoString.split(",");
+        int n_rivals = (info.length-5)/3;
+
+        System.out.print("===== "+getName()+" ===== ");
+        if (info[3].equals("anfitrion")){
+            System.out.println("(Anfitrion)");
+        }else{
+            System.out.println();
+        }
+        System.out.println("-"+info[2]);
+        for (int i = 0; i < n_rivals; i++) {
+            System.out.println("-"+info[(i*3)+7]);
+        }
+        System.out.println("====================\n");
+
+    }
 }

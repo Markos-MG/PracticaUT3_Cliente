@@ -17,7 +17,7 @@ public class Player extends Thread {
     /////////////// DATOS JUGADOR ///////////////
     private static String host;
     private int port;
-    private static boolean anfitrion;
+    private boolean anfitrion;
     /////////////////////////////////////////////
     /////////////// DATOS RIVALES ///////////////
     private static String host_Invitado;
@@ -44,7 +44,7 @@ public class Player extends Thread {
             if(anfitrion){
                 crearPartida();
             }else {
-                esperar(1000);
+                esperar(5000);
                 unirsePartida();
             }
         }
@@ -84,12 +84,11 @@ public class Player extends Thread {
                 String[] datos = parametros.split(",");
 
                 host = datos[0];
-                //System.out.println("antes"+datos[1]);
                 port = Integer.parseInt(datos[1]);
-                //System.out.println("despues"+port);
+                //System.out.println(datos[3]);
                 if (datos[3].equalsIgnoreCase("anfitrion")) {
                     anfitrion = true;
-                } else {
+                } else  {
                     anfitrion = false;
                 }
 
@@ -108,9 +107,8 @@ public class Player extends Thread {
 
     private void crearPartida() {
 
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        /*try (ServerSocket serverSocket = new ServerSocket()) {
             System.out.println("Servidor esperando conexiones...");
-
             // Espera a que un cliente se conecte
             Socket clientSocket = serverSocket.accept();
             System.out.println("Cliente conectado");
@@ -129,10 +127,8 @@ public class Player extends Thread {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
-
-/*
         //System.out.println("Creando socket servidor");
         try (ServerSocket serverSocket = new ServerSocket();) {
             //System.out.println("Realizando el bind ");
@@ -153,19 +149,17 @@ public class Player extends Thread {
                 String mensaje = bReader.readLine();
                 System.out.println("Mensaje recibido: " + mensaje);
             }
-            //System.out.println("Cerrando el nuevo socket");
-            //System.out.println("Cerrando el socket servidor");
-            //System.out.println("Terminado");
+
         } catch
         (IOException e) {
             //e.printStackTrace();
             System.out.println("hola buenas");
-        }*/
+        }
     }
 
     private void unirsePartida() {
 
-        try (Socket socket = new Socket("localhost", port);
+        /*try (Socket socket = new Socket("localhost", port);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)
         ) {
@@ -178,16 +172,10 @@ public class Player extends Thread {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
-
-        /*
         //System.out.println("Creando socket cliente");
         try (Socket clientSocket = new Socket()) {
-            //System.out.println("Estableciendo la conexión");
-            // Para indicar la dirección IP y el número de puerto del socket stream servidor
-            // al que se desea conectar, el método connect() hace uso de un objeto
-            // de la clase java.net.InetSocketAddress
             System.out.println("ENviendo info"+port+getName());
             InetSocketAddress addr = new InetSocketAddress("localhost", port);
             clientSocket.connect(addr);
@@ -209,7 +197,6 @@ public class Player extends Thread {
         } catch
         (IOException e) {
             e.printStackTrace();
-        }*/
+        }
     }
-
 }

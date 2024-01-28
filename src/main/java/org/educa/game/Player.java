@@ -16,7 +16,7 @@ public class Player extends Thread {
 
     /////////////// DATOS JUGADOR ///////////////
     private static String host;
-    private static int port;
+    private int port;
     private static boolean anfitrion;
     /////////////////////////////////////////////
     /////////////// DATOS RIVALES ///////////////
@@ -34,19 +34,28 @@ public class Player extends Thread {
 
     @Override
     public void run() {
-        System.out.println("Start player");
-        System.out.println("Creando socket cliente");
+        //System.out.println("Start player");
+        //System.out.println("Creando socket cliente");
 
-        establecerParametros(busquedaPartida());
+        boolean ok = establecerParametros(busquedaPartida());
 
-        if(anfitrion){
-            crearPartida();
-        }else {
-            try {
+        esperar(1000);
+        if(ok){
+            if(anfitrion){
+                crearPartida();
+            }else {
+                esperar(1000);
                 unirsePartida();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
+        }
+
+    }
+
+    private void esperar(int tiempo) {
+        try {
+            sleep(tiempo);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -63,41 +72,74 @@ public class Player extends Thread {
             respuesta = reader.readLine();
             System.out.println(getName() + " --- " + respuesta);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            System.out.println("Error al conectar con el servidor --"+getName());
         }
         return respuesta;
     }
 
-    private void establecerParametros(String parametros) {
-        String[] datos = new String[7];
-        if (!parametros.equalsIgnoreCase("error")) {
-            datos = parametros.split(",");
-        } else {
-            System.out.println("Jugador " + getName() + " no ha encontrado partida");
+    private boolean establecerParametros(String parametros) {
+        if(parametros!=null) {
+            if (!parametros.equalsIgnoreCase("error")) {
+                String[] datos = parametros.split(",");
+
+                host = datos[0];
+                //System.out.println("antes"+datos[1]);
+                port = Integer.parseInt(datos[1]);
+                //System.out.println("despues"+port);
+                if (datos[3].equalsIgnoreCase("anfitrion")) {
+                    anfitrion = true;
+                } else {
+                    anfitrion = false;
+                }
+
+                host_Invitado = datos[4];
+                port_Invitado = Integer.parseInt(datos[5]);
+                nombre_Invitado = datos[6];
+                return true;
+            } else {
+                System.out.println("Jugador " + getName() + " no ha encontrado partida");
+                return false;
+            }
+        }else {
+            return false;
         }
-
-        host = datos[0];
-        port = Integer.parseInt(datos[1]);
-        if (datos[3].equalsIgnoreCase("anfitrion")) {
-            anfitrion = true;
-        } else {
-            anfitrion = false;
-        }
-
-        host_Invitado = datos[4];
-        port_Invitado = Integer.parseInt(datos[5]);
-        nombre_Invitado = datos[6];
-
     }
 
-    private static void crearPartida() {
-        System.out.println("Creando socket servidor");
+    private void crearPartida() {
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Servidor esperando conexiones...");
+
+            // Espera a que un cliente se conecte
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Cliente conectado");
+
+            // Configura flujos de entrada y salida
+            try (
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)
+            ) {
+                // Lee el mensaje del cliente
+                String clientMessage = reader.readLine();
+                System.out.println("Mensaje recibido del cliente: " + clientMessage);
+
+                // Envia un mensaje de respuesta al cliente
+                writer.println("Hola, soy el servidor. ¡Mensaje recibido!");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+/*
+        //System.out.println("Creando socket servidor");
         try (ServerSocket serverSocket = new ServerSocket();) {
-            System.out.println("Realizando el bind ");
+            //System.out.println("Realizando el bind ");
             InetSocketAddress addr = new InetSocketAddress("localhost", port);
             //asigna el socket a una dirección y puerto
             serverSocket.bind(addr);
-            System.out.println("Aceptando conexiones");
+            System.out.println("Aceptando conexiones "+port+getName());
             try (Socket newSocket = serverSocket.accept();
                  InputStream is = newSocket.getInputStream();
                  OutputStream os = newSocket.getOutputStream();
@@ -111,23 +153,42 @@ public class Player extends Thread {
                 String mensaje = bReader.readLine();
                 System.out.println("Mensaje recibido: " + mensaje);
             }
-            System.out.println("Cerrando el nuevo socket");
-            System.out.println("Cerrando el socket servidor");
-            System.out.println("Terminado");
+            //System.out.println("Cerrando el nuevo socket");
+            //System.out.println("Cerrando el socket servidor");
+            //System.out.println("Terminado");
         } catch
         (IOException e) {
-            e.printStackTrace();
-        }
+            //e.printStackTrace();
+            System.out.println("hola buenas");
+        }*/
     }
 
-    private static void unirsePartida() throws InterruptedException {
-        sleep(500);
-        System.out.println("Creando socket cliente");
+    private void unirsePartida() {
+
+        try (Socket socket = new Socket("localhost", port);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)
+        ) {
+            // Envía un mensaje al servidor
+            writer.println("Hola, soy el cliente. ¿Cómo estás?");
+
+            // Lee la respuesta del servidor
+            String serverResponse = reader.readLine();
+            System.out.println("Respuesta del servidor: " + serverResponse);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        /*
+        //System.out.println("Creando socket cliente");
         try (Socket clientSocket = new Socket()) {
-            System.out.println("Estableciendo la conexión");
+            //System.out.println("Estableciendo la conexión");
             // Para indicar la dirección IP y el número de puerto del socket stream servidor
             // al que se desea conectar, el método connect() hace uso de un objeto
             // de la clase java.net.InetSocketAddress
+            System.out.println("ENviendo info"+port+getName());
             InetSocketAddress addr = new InetSocketAddress("localhost", port);
             clientSocket.connect(addr);
             try (InputStream is = clientSocket.getInputStream();
@@ -138,17 +199,17 @@ public class Player extends Thread {
                      // Flujos de líneas
                      BufferedReader bReader = new BufferedReader(isr);
                      PrintWriter pWriter = new PrintWriter(osw)) {
-                System.out.println("Enviando mensaje");
-                String mensaje = "-----------------------";
+                //System.out.println("Enviando mensaje");
+                String mensaje = "-----------------------"+getName();
                 pWriter.print(mensaje);
                 pWriter.flush();
-                System.out.println("Mensaje enviado");
+                //System.out.println("Mensaje enviado");
             }
             System.out.println("Terminado");
         } catch
         (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
 }

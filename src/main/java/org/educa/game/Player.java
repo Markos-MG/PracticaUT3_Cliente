@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 
 public class Player extends Thread {
 
@@ -17,47 +16,51 @@ public class Player extends Thread {
     /////////////// DATOS JUGADOR ///////////////
     private String host;
     private int port;
-    private boolean anfitrion;
+    private boolean amphitryon;
 
-    private int id_sala;
+    private int id_hall;
     /////////////////////////////////////////////
 
     /////////////// DATOS RIVALES ///////////////
-    private String host_Invitado;
-    private int port_Invitado;
-    private String nombre_Invitado;
+    private String host_guest;
+    private int port_guest;
+    private String name_guest;
+
     //private static ArrayList<String[]> datosRivales;
     /////////////////////////////////////////////
 
 
+    /**
+     * Constructor para crear los jugadores desde el Cliente
+     * @param name Nickname del jugador
+     * @param gameType Tipo de juego al que va a jugar
+     */
     public Player(String name, String gameType) {
         super.setName(name);
         this.gameType = gameType;
     }
 
+    /**
+     * Metodo run para cada hilo player que se ejecuta
+     */
     @Override
     public void run() {
-        //System.out.println("Start player");
-        //System.out.println("Creando socket cliente");
-
-        boolean ok = establecerParametros(busquedaPartida());
-
-        esperar(1000);
-
-
+        //Primero recibe todos los datos necesarios de la partida de los dos jugadores
+        boolean ok = setParameters(searchGame());
+        waiting(1000);
+        //si los datos se han recibido con exito
         if(ok){
-            if(anfitrion){
-                crearPartida();
-                partidaFinalizada();
-            }else {
-                esperar(1000);
-                unirsePartida();
+            if(amphitryon){//y si se trata del invitado crea la partida y posteriormente se encarga de finalizarla
+                gameCreate();
+                gameFinished();
+            }else {// en caso de no ser anfitrion es invitado y simplemente se unira a la partida creada por el anfitrion
+                waiting(1000);
+                joinGame();
             }
         }
-
     }
 
-    private void esperar(int tiempo) {
+    private void waiting(int tiempo) {
         try {
             sleep(tiempo);
         } catch (InterruptedException e) {
@@ -65,7 +68,7 @@ public class Player extends Thread {
         }
     }
 
-    private String busquedaPartida() {
+    private String searchGame() {
         String respuesta = null;
         try (Socket socket = new Socket(this.SERVERHOST, this.SERVERPORT);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -76,7 +79,7 @@ public class Player extends Thread {
 
             // Recibe la respuesta del servidor
             respuesta = reader.readLine();
-            mostrarParticipantes(respuesta);
+            showPlayers(respuesta);
         } catch (IOException e) {
             //e.printStackTrace();
             System.out.println("Error al conectar con el servidor --"+getName());
@@ -84,30 +87,30 @@ public class Player extends Thread {
         return respuesta;
     }
 
-    private void partidaFinalizada(){
+    private void gameFinished(){
         try (Socket socket = new Socket(this.SERVERHOST, this.SERVERPORT);
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)
         ) {
-            // Envia una solicitud al servidor
-            writer.println(this.id_sala);
+            // Envia una solicitud al servidor con el id de la sala que tiene que finalizar
+            writer.println(this.id_hall);
 
         } catch (IOException e) {
             //e.printStackTrace();
             System.out.println("Error al conectar con el servidor --"+getName());
         }
     }
-    private boolean establecerParametros(String parametros) {
+    private boolean setParameters(String parametros) {
         if(parametros!=null) {
             if (!parametros.equalsIgnoreCase("error")) {
                 String[] datos = parametros.split(",");
 
                 host = datos[0];
                 port = Integer.parseInt(datos[1]);
-                anfitrion = datos[3].equalsIgnoreCase("anfitrion");
-                id_sala = Integer.parseInt(datos[4]);
-                host_Invitado = datos[5];
-                port_Invitado = Integer.parseInt(datos[6]);
-                nombre_Invitado = datos[7];
+                amphitryon = datos[3].equalsIgnoreCase("anfitrion");
+                id_hall = Integer.parseInt(datos[4]);
+                host_guest = datos[5];
+                port_guest = Integer.parseInt(datos[6]);
+                name_guest = datos[7];
 
 
                 return true;
@@ -120,7 +123,10 @@ public class Player extends Thread {
         }
     }
 
-    private void crearPartida() {
+    /**
+     * Metodo para crear la partida
+     */
+    private void gameCreate() {
 
         //System.out.println("Creando socket servidor");
         try (ServerSocket serverSocket = new ServerSocket();) {
@@ -128,7 +134,6 @@ public class Player extends Thread {
             InetSocketAddress addr = new InetSocketAddress("localhost", port);
             //asigna el socket a una dirección y puerto
             serverSocket.bind(addr);
-            //System.out.println("Aceptando conexiones "+port+getName());
             try (Socket newSocket = serverSocket.accept();
                  InputStream is = newSocket.getInputStream();
                  OutputStream os = newSocket.getOutputStream();
@@ -139,50 +144,45 @@ public class Player extends Thread {
                  BufferedReader bReader = new BufferedReader(isr);
                  PrintWriter pWriter = new PrintWriter(osw);) {
 
+                //Empieza tirando el invitado
+                String tiradaInvitado = bReader.readLine();
+                String tiradaAnfitrion = roll();
 
-                String tiradaInvitado = bReader.readLine();///////mmmmmm
-                //System.out.println("invitado:"+tiradaInvitado);
-                String tiradaAnfitrion = tirarDados();
-
-                //System.out.println("anditrion:"+tiradaAnfitrion);
-
-
-                while (compGanador(tiradaAnfitrion, tiradaInvitado).equals("E")){
-                    System.out.println("empate en sala "+id_sala);
-                    pWriter.println("E");///////---------
+                while (checkWinner(tiradaAnfitrion, tiradaInvitado).equals("E")){
+                    System.out.println("empate en sala "+ id_hall);
+                    pWriter.println("E");//en caso de empate el anfitrion le envia la letra E al invitado para que vuelva a tirar
                     pWriter.flush();
 
-                    tiradaInvitado = bReader.readLine();///////mmmmmm
-                    //System.out.println("invitado:"+tiradaInvitado);
-
-                    tiradaAnfitrion = tirarDados();
-                    //System.out.println("anditrion:"+tiradaAnfitrion);
-
+                    tiradaInvitado = bReader.readLine();
+                    tiradaAnfitrion = roll();
                 }
+                //en el momento que no es empate recoge la letra correspondiente al resultado de la partida
+                String resultado = checkWinner(tiradaAnfitrion, tiradaInvitado);
 
-                String resultado = compGanador(tiradaAnfitrion, tiradaInvitado);
-
-
+                //lo imprime y envia al invitado para que este tambien termine
                 System.out.println(resultado);
-                pWriter.println(resultado);///////---------
+                pWriter.println(resultado);
                 pWriter.flush();
                 System.out.println("-------------------------");
-
             }
 
         } catch
         (IOException e) {
             //e.printStackTrace();
-            System.out.println("hola buenas");
+            System.out.println("Error de conexion");
         }
     }
 
-    private void unirsePartida() {
+    /**
+     * Metodo para que el invitadi se una la partida y juege la partida estableciendo los flujos necesarios para la comincacion
+     * necesaria entre sockets
+     */
+    private void joinGame() {
 
-        //System.out.println("Creando socket cliente");
         try (Socket clientSocket = new Socket()) {
             InetSocketAddress addr = new InetSocketAddress("localhost", port);
             clientSocket.connect(addr);
+
             try (InputStream is = clientSocket.getInputStream();
                      OutputStream os = clientSocket.getOutputStream();
                      // Flujos que manejan caracteres
@@ -192,59 +192,69 @@ public class Player extends Thread {
                      BufferedReader bReader = new BufferedReader(isr);
                      PrintWriter pWriter = new PrintWriter(osw)) {
 
-
-                pWriter.println(tirarDados());///////---------
+                //El invitado hace una tirada de dados
+                pWriter.println(roll());
                 pWriter.flush();
 
-                String resultado = bReader.readLine();///////mmmmmm
-
+                String resultado = bReader.readLine();
+                //si la respuesta del anfitrion a la tirada del invitado es "E" significa empate y el invitado volvera a tirar hasta que
+                //el anfitrion devuelva otra cosa , lo cual significaria la victoria o derrota del anfitrion
 
                 while (resultado.equals("E")){
-                    pWriter.println(tirarDados());///////---------
+                    pWriter.println(roll());
                     pWriter.flush();
 
-                    resultado = bReader.readLine();///////mmmmmm
+                    resultado = bReader.readLine();
                 }
-
-                //System.out.println("soy "+getName()+"  :"+resultado);
-
-                //System.out.println("Mensaje enviado");
             }
-            //System.out.println("Terminado");
         } catch
         (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public String tirarDados() {
-        esperar(1000*id_sala);
+    /**
+     * Metodo para generar un numero aleatorio del 1 al 6 y simular la tirada de los dados
+     * @return Devuelve el numero resultante de la tirada aleatoria
+     */
+    public String roll() {
+        waiting(1000* id_hall);
         return String.valueOf((int) (Math.random()*6)+1);
     }
 
-    public String compGanador(String anfitrion, String invitado){
+    /**
+     * Metodo para determinar el ganador de la ronda entre el anfitrion y el invitado en el juego de dados
+     * @param anfitrion Resultado de la tirada del anfitrion
+     * @param invitado Resultado de la tirada del invitado
+     * @return Devuelve la letra correspondiente al resultado de la partida entre los dos jugadores
+     */
+    public String checkWinner(String anfitrion, String invitado){
         if (Integer.parseInt(anfitrion)>Integer.parseInt(invitado)){
-            return "V";
+            return "V";//Si gana el anfitrion
         }else if (Integer.parseInt(anfitrion)<Integer.parseInt(invitado)){
-            return "D";
+            return "D";//Si pierde el anfitrion
         }else{
-            return "E";
+            return "E";//En caso de empate
         }
     }
 
-    public void mostrarParticipantes(String infoString){
+    /**
+     * Metodo para mostrar todos los jugadores de una sala
+     * @param infoString Cadena csv de todos los datos de los jugadores de una sala 
+     */
+    public void showPlayers(String infoString){
         String[] info = infoString.split(",");
-        int n_rivals = (info.length-5)/3;
+        int n_rivals = (info.length-5)/3;//Se identifica el numero de participantes que existe en la partida
 
         System.out.print("===== "+getName()+" ===== ");
-        if (info[3].equals("anfitrion")){
+        if (info[3].equals("anfitrion")){//si el participante es anfitrion
             System.out.println("(Anfitrion)");
         }else{
             System.out.println();
         }
         System.out.println("-"+info[2]);
         for (int i = 0; i < n_rivals; i++) {
-            System.out.println("-"+info[(i*3)+7]);
+            System.out.println("-"+info[(i*3)+7]);//Muestra el nickname de cada rival que hay en la sala
         }
         System.out.println("====================\n");
 

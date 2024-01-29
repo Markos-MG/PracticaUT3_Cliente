@@ -143,7 +143,7 @@ public class Player extends Thread {
         }
     }
 
-    /**
+    /*
      * Metodo para crear la partida
      */
     private void gameCreate() {
@@ -167,23 +167,28 @@ public class Player extends Thread {
                 //Empieza tirando el invitado
                 String tiradaInvitado = bReader.readLine();
                 String tiradaAnfitrion = roll();
-
+                System.out.println("\tTirada del invitado "+name_guest+": "+tiradaInvitado);
+                System.out.println("\tTirada del anfitrion "+getName() +": "+tiradaAnfitrion);
                 while (checkWinner(tiradaAnfitrion, tiradaInvitado).equals("E")){
-                    System.out.println("empate en sala "+ id_hall);
+                    System.out.println("Empate en sala "+ id_hall);
                     pWriter.println("E");//en caso de empate el anfitrion le envia la letra E al invitado para que vuelva a tirar
                     pWriter.flush();
 
                     tiradaInvitado = bReader.readLine();
                     tiradaAnfitrion = roll();
                 }
+                if(checkWinner(tiradaAnfitrion, tiradaInvitado).equals("V")){
+                    System.out.println("\t\tGana el anfitrion "+getName());
+                }else if(checkWinner(tiradaAnfitrion, tiradaInvitado).equals("D")){
+                    System.out.println("\t\tGana el invitado "+name_guest);
+                }
                 //en el momento que no es empate recoge la letra correspondiente al resultado de la partida
                 String resultado = checkWinner(tiradaAnfitrion, tiradaInvitado);
 
                 //lo imprime y envia al invitado para que este tambien termine
-                System.out.println(resultado);
+                //System.out.println(resultado);
                 pWriter.println(resultado);
                 pWriter.flush();
-                System.out.println("-------------------------");
             }
 
         } catch
@@ -265,7 +270,7 @@ public class Player extends Thread {
         String[] info = infoString.split(",");
         int n_rivals = (info.length-5)/3;//Se identifica el numero de participantes que existe en la partida
 
-        System.out.print("===== "+getName()+" ===== ");
+        System.out.print("===== "+getName()+" ===S:"+ info[4]);
         if (info[3].equals("anfitrion")){//si el participante es anfitrion
             System.out.println("(Anfitrion)");
         }else{
@@ -284,8 +289,10 @@ public class Player extends Thread {
      * @param infoString Cadena csv de todos los datos de los jugadores de una sala
      */
     public synchronized void showPlayersDados(String infoString){
-        String[] info = infoString.split(",");
-        System.out.println("===== "+getName()+" ===== "+"\n-"+info[2]+"\n-"+info[7]+"\n====================\n");
-
+        if ( infoString!= null) {
+            String[] info = infoString.split(",");
+            System.out.println("=== " + getName() + " === S:" + info[4] + "\n-" + info[2] + "\n-" + info[7] + "\n====================\n");
+        }
     }
+
 }

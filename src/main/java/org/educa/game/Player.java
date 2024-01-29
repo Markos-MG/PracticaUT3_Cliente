@@ -60,6 +60,10 @@ public class Player extends Thread {
         }
     }
 
+    /**
+     * Metodo para establecer un teimpo de espera
+     * @param tiempo
+     */
     private void waiting(int tiempo) {
         try {
             sleep(tiempo);
@@ -68,6 +72,10 @@ public class Player extends Thread {
         }
     }
 
+    /**
+     * Metodo para encontrar una partida en el servidor
+     * @return
+     */
     private String searchGame() {
         String respuesta = null;
         try (Socket socket = new Socket(this.SERVERHOST, this.SERVERPORT);
@@ -79,7 +87,7 @@ public class Player extends Thread {
 
             // Recibe la respuesta del servidor
             respuesta = reader.readLine();
-            showPlayers(respuesta);
+            showPlayers(respuesta);//Muestra la informacion de la sala encontrada en el servidor
         } catch (IOException e) {
             //e.printStackTrace();
             System.out.println("Error al conectar con el servidor --"+getName());
@@ -87,6 +95,9 @@ public class Player extends Thread {
         return respuesta;
     }
 
+    /**
+     * Metodo para finalizar el la partida
+     */
     private void gameFinished(){
         try (Socket socket = new Socket(this.SERVERHOST, this.SERVERPORT);
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)
@@ -99,6 +110,12 @@ public class Player extends Thread {
             System.out.println("Error al conectar con el servidor --"+getName());
         }
     }
+
+    /**
+     * Metodo para establecer los parametros necesarios al anfitrio e invitado en una partida
+     * @param parametros parametro a establecer extraidos a traves de la busqueda de una partida en el servidor
+     * @return devuelve true o false dependiendo de si se establecen correctamente los parametros en los participantes
+     */
     private boolean setParameters(String parametros) {
         if(parametros!=null) {
             if (!parametros.equalsIgnoreCase("error")) {
@@ -111,8 +128,6 @@ public class Player extends Thread {
                 host_guest = datos[5];
                 port_guest = Integer.parseInt(datos[6]);
                 name_guest = datos[7];
-
-
                 return true;
             } else {
                 System.out.println("Jugador " + getName() + " no ha encontrado partida");

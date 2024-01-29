@@ -87,7 +87,12 @@ public class Player extends Thread {
 
             // Recibe la respuesta del servidor
             respuesta = reader.readLine();
-            showPlayers(respuesta);//Muestra la informacion de la sala encontrada en el servidor
+            if(gameType.equals("dados")){
+                showPlayersDados(respuesta);//Muestra la informacion de la sala encontrada en el servidor
+            }else{
+                showPlayers(respuesta);
+            }
+
         } catch (IOException e) {
             //e.printStackTrace();
             System.out.println("Error al conectar con el servidor --"+getName());
@@ -233,7 +238,6 @@ public class Player extends Thread {
      * @return Devuelve el numero resultante de la tirada aleatoria
      */
     public String roll() {
-        waiting(1000* id_hall);
         return String.valueOf((int) (Math.random()*6)+1);
     }
 
@@ -257,7 +261,7 @@ public class Player extends Thread {
      * Metodo para mostrar todos los jugadores de una sala
      * @param infoString Cadena csv de todos los datos de los jugadores de una sala 
      */
-    public void showPlayers(String infoString){
+    public synchronized void showPlayers(String infoString){
         String[] info = infoString.split(",");
         int n_rivals = (info.length-5)/3;//Se identifica el numero de participantes que existe en la partida
 
@@ -272,6 +276,16 @@ public class Player extends Thread {
             System.out.println("-"+info[(i*3)+7]);//Muestra el nickname de cada rival que hay en la sala
         }
         System.out.println("====================\n");
+
+    }
+
+    /**
+     * Metodo para mostrar todos los jugadores de una sala
+     * @param infoString Cadena csv de todos los datos de los jugadores de una sala
+     */
+    public synchronized void showPlayersDados(String infoString){
+        String[] info = infoString.split(",");
+        System.out.println("===== "+getName()+" ===== "+"\n-"+info[2]+"\n-"+info[7]+"\n====================\n");
 
     }
 }

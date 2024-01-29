@@ -51,7 +51,7 @@ public class Player extends Thread {
         //si los datos se han recibido con exito
         if(ok){
             if(amphitryon){//y si se trata del invitado crea la partida y posteriormente se encarga de finalizarla
-                gameCreate();
+                createGame();
                 gameFinished();
             }else {// en caso de no ser anfitrion es invitado y simplemente se unira a la partida creada por el anfitrion
                 waiting(1000);
@@ -146,7 +146,7 @@ public class Player extends Thread {
     /*
      * Metodo para crear la partida
      */
-    private void gameCreate() {
+    private void createGame() {
 
         //System.out.println("Creando socket servidor");
         try (ServerSocket serverSocket = new ServerSocket();) {
